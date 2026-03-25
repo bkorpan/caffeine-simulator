@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caffeine Metabolism Simulator</title>
+  <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.31/dist/uPlot.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Caffeine Metabolism Simulator</h1>
+      <p class="subtitle">Model caffeine and its metabolites in your body over time</p>
+    </header>
+
+    <div id="chart-container">
+      <div id="chart"></div>
+    </div>
+
+    <div class="controls-row">
+      <section class="card dose-panel">
+        <h2>Doses</h2>
+        <div id="dose-list"></div>
+        <button id="add-dose" class="btn btn-add">+ Add Dose</button>
+      </section>
+
+      <section class="card summary-panel">
+        <h2>Summary</h2>
+        <div id="summary"></div>
+      </section>
+    </div>
+
+    <section class="card settings-panel">
+      <div class="settings-row">
+        <div class="setting-group">
+          <label class="setting-label">Metabolizer Type</label>
+          <div class="segmented-control" id="metabolizer-select">
+            <button data-value="slow" class="seg-btn">Slow</button>
+            <button data-value="normal" class="seg-btn active">Normal</button>
+            <button data-value="fast" class="seg-btn">Fast</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Show Metabolites</label>
+          <div class="checkbox-group">
+            <label class="cb-label">
+              <input type="checkbox" id="show-caffeine" checked disabled>
+              <span class="cb-swatch" style="background: var(--color-caffeine)"></span>
+              Caffeine
+            </label>
+            <label class="cb-label">
+              <input type="checkbox" id="show-paraxanthine" checked>
+              <span class="cb-swatch" style="background: var(--color-paraxanthine)"></span>
+              Paraxanthine
+            </label>
+            <label class="cb-label">
+              <input type="checkbox" id="show-theobromine">
+              <span class="cb-swatch" style="background: var(--color-theobromine)"></span>
+              Theobromine
+            </label>
+            <label class="cb-label">
+              <input type="checkbox" id="show-theophylline">
+              <span class="cb-swatch" style="background: var(--color-theophylline)"></span>
+              Theophylline
+            </label>
+            <label class="cb-label">
+              <input type="checkbox" id="show-effective">
+              <span class="cb-swatch cb-swatch-dashed" style="background: var(--color-effective)"></span>
+              Effective (A1R)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <details id="advanced-panel">
+        <summary>Advanced Parameters</summary>
+        <div class="advanced-grid">
+          <div class="param-group">
+            <h3>Half-lives (hours)</h3>
+            <label>Caffeine <input type="number" id="param-hl-caffeine" step="0.1" min="0.5" max="20"></label>
+            <label>Paraxanthine <input type="number" id="param-hl-paraxanthine" step="0.1" min="0.5" max="20"></label>
+            <label>Theobromine <input type="number" id="param-hl-theobromine" step="0.1" min="0.5" max="20"></label>
+            <label>Theophylline <input type="number" id="param-hl-theophylline" step="0.1" min="0.5" max="20"></label>
+          </div>
+          <div class="param-group">
+            <h3>Conversion Fractions</h3>
+            <label>Paraxanthine <input type="number" id="param-f-paraxanthine" step="0.01" min="0" max="1"></label>
+            <label>Theobromine <input type="number" id="param-f-theobromine" step="0.01" min="0" max="1"></label>
+            <label>Theophylline <input type="number" id="param-f-theophylline" step="0.01" min="0" max="1"></label>
+          </div>
+          <div class="param-group">
+            <h3>A1R Relative Potency</h3>
+            <label>Caffeine <input type="number" id="param-pot-caffeine" step="0.01" min="0" max="10"></label>
+            <label>Paraxanthine <input type="number" id="param-pot-paraxanthine" step="0.01" min="0" max="10"></label>
+            <label>Theobromine <input type="number" id="param-pot-theobromine" step="0.01" min="0" max="10"></label>
+            <label>Theophylline <input type="number" id="param-pot-theophylline" step="0.01" min="0" max="10"></label>
+          </div>
+          <div class="param-group">
+            <h3>Absorption & Body</h3>
+            <label>Caffeine ka (h<sup>-1</sup>) <input type="number" id="param-ka-caffeine" step="0.1" min="0.5" max="20"></label>
+            <label>Paraxanthine ka (h<sup>-1</sup>) <input type="number" id="param-ka-paraxanthine" step="0.1" min="0.5" max="20"></label>
+            <label>Body weight (kg) <input type="number" id="param-bodyweight" step="1" min="20" max="200"></label>
+            <label>Vd (L/kg) <input type="number" id="param-vd" step="0.05" min="0.1" max="2"></label>
+          </div>
+        </div>
+        <button id="reset-params" class="btn btn-secondary">Reset to Preset Defaults</button>
+      </details>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+  <script src="pk-model.js"></script>
+  <script src="chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
