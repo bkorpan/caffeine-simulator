@@ -1,8 +1,6 @@
 :root {
   --color-caffeine: #2563eb;
   --color-paraxanthine: #f59e0b;
-  --color-theobromine: #10b981;
-  --color-theophylline: #8b5cf6;
   --color-effective: #ef4444;
   --color-bg: #f8fafc;
   --color-card: #ffffff;
@@ -82,6 +80,33 @@ header h1 {
 #chart {
   width: 100%;
   min-height: 350px;
+}
+
+/* Chart legend */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 0.4rem 0 0.2rem;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.chart-legend-line {
+  display: inline-block;
+  width: 20px;
+  border-top-width: 2px;
+  border-top-style: solid;
+}
+
+.chart-legend-line-dashed {
+  border-top-style: dashed;
 }
 
 /* Controls row */
@@ -284,43 +309,6 @@ header h1 {
   background: var(--color-bg);
 }
 
-/* Checkbox group */
-.checkbox-group {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.cb-label {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.cb-label input[disabled] {
-  cursor: default;
-}
-
-.cb-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  display: inline-block;
-}
-
-.cb-swatch-dashed {
-  background: repeating-linear-gradient(
-    90deg,
-    var(--color-effective) 0px,
-    var(--color-effective) 3px,
-    transparent 3px,
-    transparent 5px
-  ) !important;
-}
-
 /* Advanced panel */
 #advanced-panel {
   margin-top: 1rem;
@@ -387,10 +375,6 @@ header h1 {
   .settings-row {
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .checkbox-group {
-    gap: 0.5rem;
   }
 
   header h1 {

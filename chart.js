@@ -26,7 +26,6 @@ function doseMarkersPlugin(getDoses) {
             ctx.moveTo(x, top);
             ctx.lineTo(x, top + height);
             ctx.stroke();
-            // Label
             ctx.fillText(d.label, x, top - 4);
           });
           ctx.restore();
@@ -36,15 +35,50 @@ function doseMarkersPlugin(getDoses) {
   };
 }
 
-function formatTimeAxis(startMinute) {
-  return (self, ticks) => {
-    return ticks.map(v => {
-      const totalMin = v;
-      const h = Math.floor(totalMin / 60) % 24;
-      const m = Math.round(totalMin % 60);
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    });
+const SERIES_META = [
+  { label: 'Caffeine', color: '--color-caffeine', dashed: false },
+  { label: 'Paraxanthine', color: '--color-paraxanthine', dashed: false },
+  { label: 'Effective (A1R)', color: '--color-effective', dashed: true },
+];
+
+function legendPlugin() {
+  return {
+    hooks: {
+      init: [
+        (u) => {
+          const el = document.createElement('div');
+          el.className = 'chart-legend';
+          const styles = getComputedStyle(document.documentElement);
+          for (const meta of SERIES_META) {
+            const item = document.createElement('span');
+            item.className = 'chart-legend-item';
+
+            const line = document.createElement('span');
+            line.className = 'chart-legend-line';
+            if (meta.dashed) {
+              line.classList.add('chart-legend-line-dashed');
+            }
+            line.style.setProperty('border-top-color', styles.getPropertyValue(meta.color).trim());
+
+            const label = document.createElement('span');
+            label.textContent = meta.label;
+
+            item.appendChild(line);
+            item.appendChild(label);
+            el.appendChild(item);
+          }
+          u.root.appendChild(el);
+        }
+      ]
+    }
   };
+}
+
+function formatHourLabels(self, ticks) {
+  return ticks.map(v => {
+    const h = Math.floor(v / 60) % 24;
+    return String(h).padStart(2, '0');
+  });
 }
 
 function initChart(container, getDoses) {
@@ -62,8 +96,16 @@ function initChart(container, getDoses) {
     axes: [
       {
         label: 'Time',
-        values: formatTimeAxis(0),
-        gap: 5,
+        values: formatHourLabels,
+        splits: (u) => {
+          const [min, max] = u.scales.x.range(u, u.data[0][0], u.data[0][u.data[0].length - 1]);
+          const ticks = [];
+          const start = Math.ceil(min / 60) * 60;
+          for (let m = start; m <= max; m += 120) {
+            ticks.push(m);
+          }
+          return ticks;
+        },
         size: 40,
       },
       {
@@ -78,44 +120,27 @@ function initChart(container, getDoses) {
         label: 'Caffeine',
         stroke: getComputedStyle(document.documentElement).getPropertyValue('--color-caffeine').trim() || '#2563eb',
         width: 2,
-        show: true,
       },
       {
         label: 'Paraxanthine',
         stroke: getComputedStyle(document.documentElement).getPropertyValue('--color-paraxanthine').trim() || '#f59e0b',
         width: 2,
-        show: true,
-      },
-      {
-        label: 'Theobromine',
-        stroke: getComputedStyle(document.documentElement).getPropertyValue('--color-theobromine').trim() || '#10b981',
-        width: 2,
-        show: false,
-      },
-      {
-        label: 'Theophylline',
-        stroke: getComputedStyle(document.documentElement).getPropertyValue('--color-theophylline').trim() || '#8b5cf6',
-        width: 2,
-        show: false,
       },
       {
         label: 'Effective (A1R)',
         stroke: getComputedStyle(document.documentElement).getPropertyValue('--color-effective').trim() || '#ef4444',
         width: 2,
         dash: [6, 4],
-        show: false,
       },
     ],
+    legend: { show: false },
     cursor: {
       drag: { x: true, y: false, setScale: true },
     },
-    plugins: [doseMarkersPlugin(getDoses)],
+    plugins: [doseMarkersPlugin(getDoses), legendPlugin()],
   };
 
-  // Empty initial data
   const data = [
-    new Float64Array(0),
-    new Float64Array(0),
     new Float64Array(0),
     new Float64Array(0),
     new Float64Array(0),
@@ -124,7 +149,6 @@ function initChart(container, getDoses) {
 
   chartInstance = new uPlot(opts, data, container);
 
-  // Responsive resize
   const ro = new ResizeObserver(entries => {
     const width = entries[0].contentRect.width;
     if (Math.abs(width - chartInstance.width) > 1) {
@@ -143,15 +167,8 @@ function updateChartData(results) {
     results.timestamps,
     results.caffeine,
     results.paraxanthine,
-    results.theobromine,
-    results.theophylline,
     results.effective,
   ];
 
   chartInstance.setData(data);
-}
-
-function setSeriesVisibility(seriesIdx, visible) {
-  if (!chartInstance) return;
-  chartInstance.setSeries(seriesIdx, { show: visible });
 }

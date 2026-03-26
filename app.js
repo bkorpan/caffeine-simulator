@@ -4,16 +4,8 @@ const state = {
   doses: [],
   metabolizer: 'normal',
   params: { ...DEFAULT_PARAMS },
-  visibility: {
-    caffeine: true,
-    paraxanthine: true,
-    theobromine: false,
-    theophylline: false,
-    effective: false,
-  },
   isCustomParams: false,
   nextDoseId: 1,
-  startHour: 0, // simulation starts at midnight
 };
 
 // --- Initialization ---
@@ -61,7 +53,7 @@ function updateDose(id, field, value) {
       dose.isCustom = drink.id === 'custom_caffeine' || drink.id === 'custom_px';
       if (!dose.isCustom) dose.mg = drink.mg;
     }
-    renderDoseList(); // re-render to show/hide mg input
+    renderDoseList();
   } else if (field === 'time') {
     dose.time = value;
   } else if (field === 'mg') {
@@ -120,7 +112,6 @@ function renderDoseList() {
     `;
   }).join('');
 
-  // Bind events on dose entries
   container.querySelectorAll('.dose-select').forEach(el => {
     el.addEventListener('change', e => updateDose(Number(e.target.dataset.id), 'drinkId', e.target.value));
   });
@@ -143,16 +134,13 @@ function renderSummary(stats) {
   }
 
   const compounds = [
-    { key: 'caffeine', label: 'Caffeine', color: 'var(--color-caffeine)', visible: state.visibility.caffeine },
-    { key: 'paraxanthine', label: 'Paraxanthine', color: 'var(--color-paraxanthine)', visible: state.visibility.paraxanthine },
-    { key: 'theobromine', label: 'Theobromine', color: 'var(--color-theobromine)', visible: state.visibility.theobromine },
-    { key: 'theophylline', label: 'Theophylline', color: 'var(--color-theophylline)', visible: state.visibility.theophylline },
-    { key: 'effective', label: 'Effective (A1R)', color: 'var(--color-effective)', visible: state.visibility.effective },
+    { key: 'caffeine', label: 'Caffeine', color: 'var(--color-caffeine)' },
+    { key: 'paraxanthine', label: 'Paraxanthine', color: 'var(--color-paraxanthine)' },
+    { key: 'effective', label: 'Effective (A1R)', color: 'var(--color-effective)' },
   ];
 
   let html = '';
   for (const c of compounds) {
-    if (!c.visible) continue;
     const s = stats[c.key];
     const peakTime = s.peakTimeMinutes != null ? minutesToTimeString(s.peakTimeMinutes, true) : '—';
     const clearTime = s.clearTimeMinutes != null ? minutesToTimeString(s.clearTimeMinutes, true) : '< threshold';
@@ -168,7 +156,7 @@ function renderSummary(stats) {
     `;
   }
 
-  container.innerHTML = html || '<div class="no-doses">No visible compounds.</div>';
+  container.innerHTML = html;
 }
 
 // --- Parameters ---
@@ -176,15 +164,9 @@ function renderSummary(stats) {
 function syncParamsToDOM() {
   document.getElementById('param-hl-caffeine').value = state.params.halfLife_caffeine;
   document.getElementById('param-hl-paraxanthine').value = state.params.halfLife_paraxanthine;
-  document.getElementById('param-hl-theobromine').value = state.params.halfLife_theobromine;
-  document.getElementById('param-hl-theophylline').value = state.params.halfLife_theophylline;
   document.getElementById('param-f-paraxanthine').value = state.params.fraction_paraxanthine;
-  document.getElementById('param-f-theobromine').value = state.params.fraction_theobromine;
-  document.getElementById('param-f-theophylline').value = state.params.fraction_theophylline;
   document.getElementById('param-pot-caffeine').value = state.params.potency_caffeine;
   document.getElementById('param-pot-paraxanthine').value = state.params.potency_paraxanthine;
-  document.getElementById('param-pot-theobromine').value = state.params.potency_theobromine;
-  document.getElementById('param-pot-theophylline').value = state.params.potency_theophylline;
   document.getElementById('param-ka-caffeine').value = state.params.ka_caffeine;
   document.getElementById('param-ka-paraxanthine').value = state.params.ka_paraxanthine;
   document.getElementById('param-bodyweight').value = state.params.bodyWeight;
@@ -194,15 +176,9 @@ function syncParamsToDOM() {
 function readParamsFromDOM() {
   state.params.halfLife_caffeine = parseFloat(document.getElementById('param-hl-caffeine').value) || DEFAULT_PARAMS.halfLife_caffeine;
   state.params.halfLife_paraxanthine = parseFloat(document.getElementById('param-hl-paraxanthine').value) || DEFAULT_PARAMS.halfLife_paraxanthine;
-  state.params.halfLife_theobromine = parseFloat(document.getElementById('param-hl-theobromine').value) || DEFAULT_PARAMS.halfLife_theobromine;
-  state.params.halfLife_theophylline = parseFloat(document.getElementById('param-hl-theophylline').value) || DEFAULT_PARAMS.halfLife_theophylline;
   state.params.fraction_paraxanthine = parseFloat(document.getElementById('param-f-paraxanthine').value) || DEFAULT_PARAMS.fraction_paraxanthine;
-  state.params.fraction_theobromine = parseFloat(document.getElementById('param-f-theobromine').value) || DEFAULT_PARAMS.fraction_theobromine;
-  state.params.fraction_theophylline = parseFloat(document.getElementById('param-f-theophylline').value) || DEFAULT_PARAMS.fraction_theophylline;
   state.params.potency_caffeine = parseFloat(document.getElementById('param-pot-caffeine').value) || DEFAULT_PARAMS.potency_caffeine;
   state.params.potency_paraxanthine = parseFloat(document.getElementById('param-pot-paraxanthine').value) || DEFAULT_PARAMS.potency_paraxanthine;
-  state.params.potency_theobromine = parseFloat(document.getElementById('param-pot-theobromine').value) || DEFAULT_PARAMS.potency_theobromine;
-  state.params.potency_theophylline = parseFloat(document.getElementById('param-pot-theophylline').value) || DEFAULT_PARAMS.potency_theophylline;
   state.params.ka_caffeine = parseFloat(document.getElementById('param-ka-caffeine').value) || DEFAULT_PARAMS.ka_caffeine;
   state.params.ka_paraxanthine = parseFloat(document.getElementById('param-ka-paraxanthine').value) || DEFAULT_PARAMS.ka_paraxanthine;
   state.params.bodyWeight = parseFloat(document.getElementById('param-bodyweight').value) || DEFAULT_PARAMS.bodyWeight;
@@ -241,15 +217,12 @@ function update() {
       timestamps: new Float64Array(0),
       caffeine: new Float64Array(0),
       paraxanthine: new Float64Array(0),
-      theobromine: new Float64Array(0),
-      theophylline: new Float64Array(0),
       effective: new Float64Array(0),
     });
     renderSummary(null);
     return;
   }
 
-  // Convert doses to simulation format
   const simDoses = state.doses.map(d => ({
     timeMinutes: timeToMinutes(d.time),
     mg: d.mg,
@@ -264,40 +237,19 @@ function update() {
 // --- Event Binding ---
 
 function bindEvents() {
-  // Add dose
   document.getElementById('add-dose').addEventListener('click', () => {
     addDose('coffee', currentTimeString());
   });
 
-  // Metabolizer preset
   document.querySelectorAll('#metabolizer-select .seg-btn').forEach(btn => {
     btn.addEventListener('click', () => setMetabolizer(btn.dataset.value));
   });
 
-  // Visibility checkboxes
-  const visMap = {
-    'show-caffeine': { key: 'caffeine', seriesIdx: 1 },
-    'show-paraxanthine': { key: 'paraxanthine', seriesIdx: 2 },
-    'show-theobromine': { key: 'theobromine', seriesIdx: 3 },
-    'show-theophylline': { key: 'theophylline', seriesIdx: 4 },
-    'show-effective': { key: 'effective', seriesIdx: 5 },
-  };
-
-  for (const [id, { key, seriesIdx }] of Object.entries(visMap)) {
-    document.getElementById(id).addEventListener('change', e => {
-      state.visibility[key] = e.target.checked;
-      setSeriesVisibility(seriesIdx, e.target.checked);
-      renderSummary(lastStats());
-    });
-  }
-
-  // Advanced parameter inputs
   const paramInputs = document.querySelectorAll('#advanced-panel input[type="number"]');
   paramInputs.forEach(input => {
     input.addEventListener('input', debounce(() => {
       readParamsFromDOM();
       state.isCustomParams = true;
-      // Deselect metabolizer preset
       document.querySelectorAll('#metabolizer-select .seg-btn').forEach(btn => {
         btn.classList.remove('active');
       });
@@ -305,21 +257,9 @@ function bindEvents() {
     }, 150));
   });
 
-  // Reset params
   document.getElementById('reset-params').addEventListener('click', () => {
     setMetabolizer(state.metabolizer || 'normal');
   });
-}
-
-// Helper: get last simulation stats (re-run if needed)
-function lastStats() {
-  if (state.doses.length === 0) return null;
-  const simDoses = state.doses.map(d => ({
-    timeMinutes: timeToMinutes(d.time),
-    mg: d.mg,
-    isParaxanthine: d.isParaxanthine,
-  }));
-  return simulate(simDoses, state.params).stats;
 }
 
 // --- Utilities ---

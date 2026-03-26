@@ -41,36 +41,6 @@
             <button data-value="fast" class="seg-btn">Fast</button>
           </div>
         </div>
-        <div class="setting-group">
-          <label class="setting-label">Show Metabolites</label>
-          <div class="checkbox-group">
-            <label class="cb-label">
-              <input type="checkbox" id="show-caffeine" checked disabled>
-              <span class="cb-swatch" style="background: var(--color-caffeine)"></span>
-              Caffeine
-            </label>
-            <label class="cb-label">
-              <input type="checkbox" id="show-paraxanthine" checked>
-              <span class="cb-swatch" style="background: var(--color-paraxanthine)"></span>
-              Paraxanthine
-            </label>
-            <label class="cb-label">
-              <input type="checkbox" id="show-theobromine">
-              <span class="cb-swatch" style="background: var(--color-theobromine)"></span>
-              Theobromine
-            </label>
-            <label class="cb-label">
-              <input type="checkbox" id="show-theophylline">
-              <span class="cb-swatch" style="background: var(--color-theophylline)"></span>
-              Theophylline
-            </label>
-            <label class="cb-label">
-              <input type="checkbox" id="show-effective">
-              <span class="cb-swatch cb-swatch-dashed" style="background: var(--color-effective)"></span>
-              Effective (A1R)
-            </label>
-          </div>
-        </div>
       </div>
 
       <details id="advanced-panel">
@@ -80,26 +50,17 @@
             <h3>Half-lives (hours)</h3>
             <label>Caffeine <input type="number" id="param-hl-caffeine" step="0.1" min="0.5" max="20"></label>
             <label>Paraxanthine <input type="number" id="param-hl-paraxanthine" step="0.1" min="0.5" max="20"></label>
-            <label>Theobromine <input type="number" id="param-hl-theobromine" step="0.1" min="0.5" max="20"></label>
-            <label>Theophylline <input type="number" id="param-hl-theophylline" step="0.1" min="0.5" max="20"></label>
           </div>
           <div class="param-group">
-            <h3>Conversion Fractions</h3>
-            <label>Paraxanthine <input type="number" id="param-f-paraxanthine" step="0.01" min="0" max="1"></label>
-            <label>Theobromine <input type="number" id="param-f-theobromine" step="0.01" min="0" max="1"></label>
-            <label>Theophylline <input type="number" id="param-f-theophylline" step="0.01" min="0" max="1"></label>
-          </div>
-          <div class="param-group">
-            <h3>A1R Relative Potency</h3>
-            <label>Caffeine <input type="number" id="param-pot-caffeine" step="0.01" min="0" max="10"></label>
-            <label>Paraxanthine <input type="number" id="param-pot-paraxanthine" step="0.01" min="0" max="10"></label>
-            <label>Theobromine <input type="number" id="param-pot-theobromine" step="0.01" min="0" max="10"></label>
-            <label>Theophylline <input type="number" id="param-pot-theophylline" step="0.01" min="0" max="10"></label>
+            <h3>Conversion & Potency</h3>
+            <label>Fraction to PX <input type="number" id="param-f-paraxanthine" step="0.01" min="0" max="1"></label>
+            <label>Caffeine A1R potency <input type="number" id="param-pot-caffeine" step="0.01" min="0" max="10"></label>
+            <label>Paraxanthine A1R potency <input type="number" id="param-pot-paraxanthine" step="0.01" min="0" max="10"></label>
           </div>
           <div class="param-group">
             <h3>Absorption & Body</h3>
-            <label>Caffeine ka (h<sup>-1</sup>) <input type="number" id="param-ka-caffeine" step="0.1" min="0.5" max="20"></label>
-            <label>Paraxanthine ka (h<sup>-1</sup>) <input type="number" id="param-ka-paraxanthine" step="0.1" min="0.5" max="20"></label>
+            <label><span>Caffeine ka (h<sup>-1</sup>)</span> <input type="number" id="param-ka-caffeine" step="0.1" min="0.5" max="20"></label>
+            <label><span>Paraxanthine ka (h<sup>-1</sup>)</span> <input type="number" id="param-ka-paraxanthine" step="0.1" min="0.5" max="20"></label>
             <label>Body weight (kg) <input type="number" id="param-bodyweight" step="1" min="20" max="200"></label>
             <label>Vd (L/kg) <input type="number" id="param-vd" step="0.05" min="0.1" max="2"></label>
           </div>
