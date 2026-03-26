@@ -35,6 +35,37 @@ function doseMarkersPlugin(getDoses) {
   };
 }
 
+function dayBandsPlugin() {
+  return {
+    hooks: {
+      drawAxes: [
+        (u) => {
+          const ctx = u.ctx;
+          const { left, top, width, height } = u.bbox;
+          const [xMin, xMax] = [u.scales.x.min, u.scales.x.max];
+
+          // Find day boundaries (midnight = minute 0, 1440, 2880, ...)
+          const firstDay = Math.floor(xMin / 1440);
+          const lastDay = Math.ceil(xMax / 1440);
+
+          ctx.save();
+          for (let day = firstDay; day <= lastDay; day++) {
+            if (day % 2 === 0) continue; // only shade odd days
+            const startMin = day * 1440;
+            const endMin = (day + 1) * 1440;
+            const x0 = Math.max(u.valToPos(startMin, 'x', true), left);
+            const x1 = Math.min(u.valToPos(endMin, 'x', true), left + width);
+            if (x1 <= x0) continue;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+            ctx.fillRect(x0, top, x1 - x0, height);
+          }
+          ctx.restore();
+        }
+      ]
+    }
+  };
+}
+
 const SERIES_META = [
   { label: 'Caffeine', color: '--color-caffeine', dashed: false },
   { label: 'Paraxanthine', color: '--color-paraxanthine', dashed: false },
@@ -137,7 +168,7 @@ function initChart(container, getDoses) {
     cursor: {
       drag: { x: true, y: false, setScale: true },
     },
-    plugins: [doseMarkersPlugin(getDoses), legendPlugin()],
+    plugins: [dayBandsPlugin(), doseMarkersPlugin(getDoses), legendPlugin()],
   };
 
   const data = [
