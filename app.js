@@ -3,6 +3,7 @@
 const state = {
   doses: [],
   metabolizer: 'normal',
+  mode: 'single', // 'single' or 'steady'
   params: { ...DEFAULT_PARAMS },
   isCustomParams: false,
   nextDoseId: 1,
@@ -139,11 +140,17 @@ function renderSummary(stats) {
     { key: 'effective', label: 'Effective (A1R)', color: 'var(--color-effective)' },
   ];
 
+  const isSteady = state.mode === 'steady';
+
   let html = '';
   for (const c of compounds) {
     const s = stats[c.key];
-    const peakTime = s.peakTimeMinutes != null ? minutesToTimeString(s.peakTimeMinutes, true) : '—';
+    const peakTime = s.peakTimeMinutes != null
+      ? minutesToTimeString(s.peakTimeMinutes % 1440, false)
+      : '—';
     const clearTime = s.clearTimeMinutes != null ? minutesToTimeString(s.clearTimeMinutes, true) : '< threshold';
+    const aucValue = isSteady ? Math.round(s.auc / 2 * 100) / 100 : s.auc;
+    const aucLabel = isSteady ? 'AUC / day' : 'AUC';
 
     html += `
       <div class="stat-section-title">
@@ -151,8 +158,8 @@ function renderSummary(stats) {
         ${c.label}
       </div>
       <div class="stat-row"><span class="stat-label">Peak</span><span class="stat-value">${s.peak} mg/L at ${peakTime}</span></div>
-      <div class="stat-row"><span class="stat-label">AUC</span><span class="stat-value">${s.auc} mg&middot;h/L</span></div>
-      <div class="stat-row"><span class="stat-label">Below 0.1 mg/L</span><span class="stat-value">${clearTime}</span></div>
+      <div class="stat-row"><span class="stat-label">${aucLabel}</span><span class="stat-value">${aucValue} mg&middot;h/L</span></div>
+      ${!isSteady ? `<div class="stat-row"><span class="stat-label">Below 0.1 mg/L</span><span class="stat-value">${clearTime}</span></div>` : ''}
     `;
   }
 
@@ -223,15 +230,73 @@ function update() {
     return;
   }
 
-  const simDoses = state.doses.map(d => ({
+  const baseDoses = state.doses.map(d => ({
     timeMinutes: timeToMinutes(d.time),
     mg: d.mg,
     isParaxanthine: d.isParaxanthine,
   }));
 
-  const results = simulate(simDoses, state.params);
-  updateChartData(results);
-  renderSummary(results.stats);
+  if (state.mode === 'steady') {
+    const RAMP_DAYS = 10;
+    const SHOW_DAYS = 2;
+    const simDoses = [];
+    for (let day = 0; day < RAMP_DAYS; day++) {
+      for (const d of baseDoses) {
+        simDoses.push({ ...d, timeMinutes: d.timeMinutes + day * 1440 });
+      }
+    }
+
+    const fullResults = simulate(simDoses, state.params);
+
+    // Slice the last SHOW_DAYS days for display
+    const showStart = (RAMP_DAYS - SHOW_DAYS) * 1440;
+    const sliceFrom = Math.min(showStart, fullResults.timestamps.length - 1);
+
+    const sliceTo = Math.min(sliceFrom + SHOW_DAYS * 1440, fullResults.timestamps.length);
+
+    const sliced = {
+      timestamps: fullResults.timestamps.slice(sliceFrom, sliceTo),
+      caffeine: fullResults.caffeine.slice(sliceFrom, sliceTo),
+      paraxanthine: fullResults.paraxanthine.slice(sliceFrom, sliceTo),
+      effective: fullResults.effective.slice(sliceFrom, sliceTo),
+      stats: computeStatsForRange(fullResults, sliceFrom, sliceTo),
+    };
+
+    updateChartData(sliced);
+    renderSummary(sliced.stats);
+  } else {
+    const results = simulate(baseDoses, state.params);
+    updateChartData(results);
+    renderSummary(results.stats);
+  }
+}
+
+function computeStatsForRange(results, fromIdx, toIdx) {
+  const THRESHOLD = 0.1;
+  const end = toIdx || results.timestamps.length;
+  function sliceStats(data, timestamps) {
+    let peak = 0, peakIdx = fromIdx, auc = 0, clearIdx = -1;
+    for (let i = fromIdx; i < end; i++) {
+      if (data[i] > peak) { peak = data[i]; peakIdx = i; }
+      if (i > fromIdx) {
+        auc += (data[i - 1] + data[i]) / 2 * (1 / 60);
+      }
+    }
+    for (let i = end - 1; i >= fromIdx; i--) {
+      if (data[i] >= THRESHOLD) { clearIdx = i + 1; break; }
+    }
+    return {
+      peak: Math.round(peak * 100) / 100,
+      peakTimeMinutes: timestamps[peakIdx],
+      auc: Math.round(auc * 100) / 100,
+      clearTimeMinutes: clearIdx >= 0 && clearIdx < timestamps.length ? timestamps[clearIdx] : null,
+    };
+  }
+  return {
+    caffeine: sliceStats(results.caffeine, results.timestamps),
+    paraxanthine: sliceStats(results.paraxanthine, results.timestamps),
+    effective: sliceStats(results.effective, results.timestamps),
+  };
 }
 
 // --- Event Binding ---
@@ -243,6 +308,16 @@ function bindEvents() {
 
   document.querySelectorAll('#metabolizer-select .seg-btn').forEach(btn => {
     btn.addEventListener('click', () => setMetabolizer(btn.dataset.value));
+  });
+
+  document.querySelectorAll('#mode-select .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.mode = btn.dataset.value;
+      document.querySelectorAll('#mode-select .seg-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.value === state.mode);
+      });
+      update();
+    });
   });
 
   const paramInputs = document.querySelectorAll('#advanced-panel input[type="number"]');
