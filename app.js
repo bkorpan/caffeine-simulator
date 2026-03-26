@@ -265,7 +265,7 @@ function update() {
     updateChartData(sliced);
     renderSummary(sliced.stats);
   } else {
-    const results = simulate(baseDoses, state.params);
+    const results = simulate(baseDoses, { ...state.params, maxMinutes: 2880 });
     updateChartData(results);
     renderSummary(results.stats);
   }
