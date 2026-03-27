@@ -2,23 +2,9 @@
 // One-compartment model with first-order absorption and elimination
 // Solver: RK4 at dt = 1 minute
 
-const PRESETS = {
-  normal: {
-    halfLife_caffeine: 5.0,
-    halfLife_paraxanthine: 4.0,
-  },
-  slow: {
-    halfLife_caffeine: 8.0,
-    halfLife_paraxanthine: 6.5,
-  },
-  fast: {
-    halfLife_caffeine: 2.5,
-    halfLife_paraxanthine: 2.0,
-  },
-};
-
 const DEFAULT_PARAMS = {
-  ...PRESETS.normal,
+  halfLife_caffeine: 5.0,
+  halfLife_paraxanthine: 4.0,
   fraction_paraxanthine: 0.84,
   ka_caffeine: 4.0,       // absorption rate, h^-1
   ka_paraxanthine: 3.5,   // absorption rate for PX supplements, h^-1

@@ -2,7 +2,7 @@
 
 const state = {
   doses: [],
-  metabolizer: 'normal',
+  metabolismSpeed: 1.0, // 0.5 to 2.0, log-scaled
   mode: 'single', // 'single' or 'steady'
   params: { ...DEFAULT_PARAMS },
   isCustomParams: false,
@@ -196,18 +196,28 @@ function readParamsFromDOM() {
   state.params.vd = parseFloat(document.getElementById('param-vd').value) || DEFAULT_PARAMS.vd;
 }
 
-function setMetabolizer(type) {
-  state.metabolizer = type;
-  state.isCustomParams = false;
-  const preset = PRESETS[type];
-  Object.assign(state.params, preset);
-  syncParamsToDOM();
+// Convert slider value (-1..1) to speed (0.5..2.0) with log spacing
+function sliderToSpeed(v) {
+  return Math.pow(2, v);
+}
 
-  document.querySelectorAll('#metabolizer-select .seg-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.value === type);
-  });
+function speedToSlider(speed) {
+  return Math.log2(speed);
+}
 
+function setMetabolismSpeed(sliderVal) {
+  state.metabolismSpeed = Math.round(sliderToSpeed(sliderVal) * 100) / 100;
+  document.getElementById('speed-label').textContent = state.metabolismSpeed.toFixed(1) + 'x';
   update();
+}
+
+// Apply speed scaling: faster metabolism = shorter half-lives
+function getEffectiveParams() {
+  const p = { ...state.params };
+  const scale = 1 / state.metabolismSpeed;
+  p.halfLife_caffeine *= scale;
+  p.halfLife_paraxanthine *= scale;
+  return p;
 }
 
 // --- Simulation & Update ---
@@ -250,7 +260,7 @@ function update() {
       }
     }
 
-    const fullResults = simulate(simDoses, state.params);
+    const fullResults = simulate(simDoses, getEffectiveParams());
 
     // Slice the last SHOW_DAYS days for display
     const showStart = (RAMP_DAYS - SHOW_DAYS) * 1440;
@@ -269,7 +279,7 @@ function update() {
     updateChartData(sliced);
     renderSummary(sliced.stats);
   } else {
-    const results = simulate(baseDoses, { ...state.params, minMinutes: 2880 });
+    const results = simulate(baseDoses, { ...getEffectiveParams(), minMinutes: 2880 });
     // Display only the first 2 days, but stats use the full simulation
     const displayEnd = Math.min(2880, results.timestamps.length);
     updateChartData({
@@ -317,8 +327,8 @@ function bindEvents() {
     addDose('coffee', currentTimeString());
   });
 
-  document.querySelectorAll('#metabolizer-select .seg-btn').forEach(btn => {
-    btn.addEventListener('click', () => setMetabolizer(btn.dataset.value));
+  document.getElementById('metabolism-speed').addEventListener('input', e => {
+    setMetabolismSpeed(parseFloat(e.target.value));
   });
 
   document.querySelectorAll('#mode-select .seg-btn').forEach(btn => {
@@ -336,15 +346,17 @@ function bindEvents() {
     input.addEventListener('input', debounce(() => {
       readParamsFromDOM();
       state.isCustomParams = true;
-      document.querySelectorAll('#metabolizer-select .seg-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
       update();
     }, 150));
   });
 
   document.getElementById('reset-params').addEventListener('click', () => {
-    setMetabolizer(state.metabolizer || 'normal');
+    state.params = { ...DEFAULT_PARAMS };
+    state.metabolismSpeed = 1.0;
+    document.getElementById('metabolism-speed').value = 0;
+    document.getElementById('speed-label').textContent = '1.0x';
+    syncParamsToDOM();
+    update();
   });
 }
 

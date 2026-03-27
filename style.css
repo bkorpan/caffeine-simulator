@@ -286,6 +286,24 @@ header h1 {
   display: inline-block;
 }
 
+/* Slider */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  cursor: pointer;
+}
+
+.slider-bound {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
 /* Settings panel */
 .settings-panel {
   margin-bottom: 1rem;
