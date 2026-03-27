@@ -148,7 +148,11 @@ function renderSummary(stats) {
     const peakTime = s.peakTimeMinutes != null
       ? minutesToTimeString(s.peakTimeMinutes % 1440, false)
       : '—';
-    const clearTime = s.clearTimeMinutes != null ? minutesToTimeString(s.clearTimeMinutes, true) : '< threshold';
+    const firstDoseMinutes = Math.min(...state.doses.map(d => timeToMinutes(d.time)));
+    const elimHours = s.clearTimeMinutes != null
+      ? Math.round((s.clearTimeMinutes - firstDoseMinutes) / 60 * 10) / 10
+      : null;
+    const elimDisplay = elimHours != null ? `${elimHours} h` : '< threshold';
     const aucValue = isSteady ? Math.round(s.auc / 2 * 100) / 100 : s.auc;
     const aucLabel = isSteady ? 'AUC / day' : 'AUC';
 
@@ -159,7 +163,7 @@ function renderSummary(stats) {
       </div>
       <div class="stat-row"><span class="stat-label">Peak</span><span class="stat-value">${s.peak} mg/L at ${peakTime}</span></div>
       <div class="stat-row"><span class="stat-label">${aucLabel}</span><span class="stat-value">${aucValue} mg&middot;h/L</span></div>
-      ${!isSteady ? `<div class="stat-row"><span class="stat-label">Below 0.1 mg/L</span><span class="stat-value">${clearTime}</span></div>` : ''}
+      ${!isSteady ? `<div class="stat-row"><span class="stat-label">Elimination (&lt;0.1 mg/L)</span><span class="stat-value">${elimDisplay}</span></div>` : ''}
     `;
   }
 
