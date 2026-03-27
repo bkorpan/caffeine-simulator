@@ -69,7 +69,7 @@ function dayBandsPlugin() {
 const SERIES_META = [
   { label: 'Caffeine', color: '--color-caffeine', dashed: false },
   { label: 'Paraxanthine', color: '--color-paraxanthine', dashed: false },
-  { label: 'Effective (A1R)', color: '--color-effective', dashed: true },
+  { label: 'Effective', color: '--color-effective', dashed: true },
 ];
 
 function legendPlugin() {
@@ -207,7 +207,7 @@ function initChart(container, getDoses) {
         width: 2,
       },
       {
-        label: 'Effective (A1R)',
+        label: 'Effective',
         stroke: getComputedStyle(document.documentElement).getPropertyValue('--color-effective').trim() || '#ef4444',
         width: 2,
         dash: [6, 4],

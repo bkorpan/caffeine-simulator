@@ -137,7 +137,7 @@ function renderSummary(stats) {
   const compounds = [
     { key: 'caffeine', label: 'Caffeine', color: 'var(--color-caffeine)' },
     { key: 'paraxanthine', label: 'Paraxanthine', color: 'var(--color-paraxanthine)' },
-    { key: 'effective', label: 'Effective (A1R)', color: 'var(--color-effective)' },
+    { key: 'effective', label: 'Effective', color: 'var(--color-effective)' },
   ];
 
   const isSteady = state.mode === 'steady';
