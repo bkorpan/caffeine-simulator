@@ -265,8 +265,15 @@ function update() {
     updateChartData(sliced);
     renderSummary(sliced.stats);
   } else {
-    const results = simulate(baseDoses, { ...state.params, maxMinutes: 2880 });
-    updateChartData(results);
+    const results = simulate(baseDoses, state.params);
+    // Display only the first 2 days, but stats use the full simulation
+    const displayEnd = Math.min(2880, results.timestamps.length);
+    updateChartData({
+      timestamps: results.timestamps.slice(0, displayEnd),
+      caffeine: results.caffeine.slice(0, displayEnd),
+      paraxanthine: results.paraxanthine.slice(0, displayEnd),
+      effective: results.effective.slice(0, displayEnd),
+    });
     renderSummary(results.stats);
   }
 }
