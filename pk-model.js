@@ -121,7 +121,8 @@ function simulate(doses, params) {
     : 0;
   const longestHalfLife = Math.max(p.halfLife_caffeine, p.halfLife_paraxanthine);
   const clearanceWindow = Math.ceil(longestHalfLife * 7 * 60);
-  const totalMinutes = p.maxMinutes || Math.max(lastDoseTime + clearanceWindow, 24 * 60);
+  const minWindow = p.minMinutes || 24 * 60;
+  const totalMinutes = Math.max(lastDoseTime + clearanceWindow, minWindow);
 
   const dt = 1 / 60; // 1 minute in hours
   const steps = totalMinutes;

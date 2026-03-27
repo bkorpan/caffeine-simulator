@@ -269,7 +269,7 @@ function update() {
     updateChartData(sliced);
     renderSummary(sliced.stats);
   } else {
-    const results = simulate(baseDoses, state.params);
+    const results = simulate(baseDoses, { ...state.params, minMinutes: 2880 });
     // Display only the first 2 days, but stats use the full simulation
     const displayEnd = Math.min(2880, results.timestamps.length);
     updateChartData({
