@@ -105,6 +105,55 @@ function legendPlugin() {
   };
 }
 
+function tooltipPlugin() {
+  let tooltip;
+
+  function init(u) {
+    tooltip = document.createElement('div');
+    tooltip.className = 'chart-tooltip';
+    tooltip.style.display = 'none';
+    u.root.querySelector('.u-over').appendChild(tooltip);
+  }
+
+  function setCursor(u) {
+    const idx = u.cursor.idx;
+    if (idx == null || !u.data[0].length) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const min = u.data[0][idx];
+    const h = Math.floor(min / 60) % 24;
+    const m = Math.round(min % 60);
+    const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+    let rows = `<div class="chart-tooltip-time">${time}</div>`;
+    for (let i = 1; i < u.series.length; i++) {
+      const s = u.series[i];
+      if (!s.show) continue;
+      const val = u.data[i][idx];
+      if (val == null) continue;
+      const color = SERIES_META[i - 1].dashed ? 'var(--color-effective)' : s._stroke;
+      rows += `<div class="chart-tooltip-row"><span class="chart-tooltip-dot" style="background:${color}"></span>${s.label}: ${val.toFixed(2)} mg/L</div>`;
+    }
+    tooltip.innerHTML = rows;
+    tooltip.style.display = 'block';
+
+    const left = u.valToPos(min, 'x');
+    const overWidth = u.root.querySelector('.u-over').offsetWidth;
+    const tipWidth = tooltip.offsetWidth;
+    tooltip.style.left = (left + tipWidth + 24 > overWidth ? left - tipWidth - 24 : left + 24) + 'px';
+    tooltip.style.top = '10px';
+  }
+
+  return {
+    hooks: {
+      init: [init],
+      setCursor: [setCursor],
+    }
+  };
+}
+
 function formatHourLabels(self, ticks) {
   return ticks.map(v => {
     const h = Math.floor(v / 60) % 24;
@@ -168,7 +217,7 @@ function initChart(container, getDoses) {
     cursor: {
       drag: { x: true, y: false, setScale: true },
     },
-    plugins: [dayBandsPlugin(), doseMarkersPlugin(getDoses), legendPlugin()],
+    plugins: [dayBandsPlugin(), doseMarkersPlugin(getDoses), tooltipPlugin(), legendPlugin()],
   };
 
   const data = [
