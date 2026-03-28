@@ -10,13 +10,7 @@ const DEFAULT_PARAMS = {
   ka_paraxanthine: 3.5,   // absorption rate for PX supplements, h^-1
   bodyWeight: 70,          // kg
   vd: 0.7,                // L/kg
-  // Relative potency (caffeine = 1.0)
-  // Rat Ki values used for cross-compound consistency (human data
-  // unavailable for paraxanthine). Sources:
-  //   Muller & Jacobson 2011 (PMC3882893), Table 1
-  //   Daly et al. 1983 (PMC11572908)
-  // Ki (rat): caffeine ~44 μM, paraxanthine ~21 μM
-  potency_caffeine: 1.0,        // 44/44
+  potency_caffeine: 1.0,
   potency_paraxanthine: 1.0,
 };
 

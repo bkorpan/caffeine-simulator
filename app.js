@@ -2,8 +2,9 @@
 
 const state = {
   doses: [],
-  metabolismSpeed: 1.0, // 0.5 to 2.0, log-scaled
-  mode: 'single', // 'single' or 'steady'
+  metabolismSpeed: 1.0,
+  paraxanthinePotency: 1.0,
+  mode: 'single',
   params: { ...DEFAULT_PARAMS },
   isCustomParams: false,
   nextDoseId: 1,
@@ -178,8 +179,6 @@ function syncParamsToDOM() {
   document.getElementById('param-hl-caffeine').value = state.params.halfLife_caffeine;
   document.getElementById('param-hl-paraxanthine').value = state.params.halfLife_paraxanthine;
   document.getElementById('param-f-paraxanthine').value = state.params.fraction_paraxanthine;
-  document.getElementById('param-pot-caffeine').value = state.params.potency_caffeine;
-  document.getElementById('param-pot-paraxanthine').value = state.params.potency_paraxanthine;
   document.getElementById('param-ka-caffeine').value = state.params.ka_caffeine;
   document.getElementById('param-ka-paraxanthine').value = state.params.ka_paraxanthine;
   document.getElementById('param-bodyweight').value = state.params.bodyWeight;
@@ -190,8 +189,6 @@ function readParamsFromDOM() {
   state.params.halfLife_caffeine = parseFloat(document.getElementById('param-hl-caffeine').value) || DEFAULT_PARAMS.halfLife_caffeine;
   state.params.halfLife_paraxanthine = parseFloat(document.getElementById('param-hl-paraxanthine').value) || DEFAULT_PARAMS.halfLife_paraxanthine;
   state.params.fraction_paraxanthine = parseFloat(document.getElementById('param-f-paraxanthine').value) || DEFAULT_PARAMS.fraction_paraxanthine;
-  state.params.potency_caffeine = parseFloat(document.getElementById('param-pot-caffeine').value) || DEFAULT_PARAMS.potency_caffeine;
-  state.params.potency_paraxanthine = parseFloat(document.getElementById('param-pot-paraxanthine').value) || DEFAULT_PARAMS.potency_paraxanthine;
   state.params.ka_caffeine = parseFloat(document.getElementById('param-ka-caffeine').value) || DEFAULT_PARAMS.ka_caffeine;
   state.params.ka_paraxanthine = parseFloat(document.getElementById('param-ka-paraxanthine').value) || DEFAULT_PARAMS.ka_paraxanthine;
   state.params.bodyWeight = parseFloat(document.getElementById('param-bodyweight').value) || DEFAULT_PARAMS.bodyWeight;
@@ -213,12 +210,19 @@ function setMetabolismSpeed(sliderVal) {
   update();
 }
 
-// Apply speed scaling: faster metabolism = shorter half-lives
+function setParaxanthinePotency(sliderVal) {
+  state.paraxanthinePotency = Math.round(sliderToSpeed(sliderVal) * 100) / 100;
+  document.getElementById('potency-label').textContent = state.paraxanthinePotency.toFixed(1) + 'x';
+  update();
+}
+
 function getEffectiveParams() {
   const p = { ...state.params };
   const scale = 1 / state.metabolismSpeed;
   p.halfLife_caffeine *= scale;
   p.halfLife_paraxanthine *= scale;
+  p.potency_caffeine = 1.0;
+  p.potency_paraxanthine = state.paraxanthinePotency;
   return p;
 }
 
@@ -332,6 +336,10 @@ function bindEvents() {
     setMetabolismSpeed(parseFloat(e.target.value));
   });
 
+  document.getElementById('paraxanthine-potency').addEventListener('input', e => {
+    setParaxanthinePotency(parseFloat(e.target.value));
+  });
+
   document.querySelectorAll('#mode-select .seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.mode = btn.dataset.value;
@@ -354,8 +362,11 @@ function bindEvents() {
   document.getElementById('reset-params').addEventListener('click', () => {
     state.params = { ...DEFAULT_PARAMS };
     state.metabolismSpeed = 1.0;
+    state.paraxanthinePotency = 1.0;
     document.getElementById('metabolism-speed').value = 0;
     document.getElementById('speed-label').textContent = '1.0x';
+    document.getElementById('paraxanthine-potency').value = 0;
+    document.getElementById('potency-label').textContent = '1.0x';
     syncParamsToDOM();
     update();
   });

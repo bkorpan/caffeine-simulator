@@ -42,6 +42,14 @@
             <span class="slider-bound">2.0x</span>
           </div>
         </div>
+        <div class="setting-group">
+          <label class="setting-label">Paraxanthine Potency: <span id="potency-label">1.0x</span></label>
+          <div class="slider-row">
+            <span class="slider-bound">0.5x</span>
+            <input type="range" id="paraxanthine-potency" min="-1" max="1" step="0.01" value="0">
+            <span class="slider-bound">2.0x</span>
+          </div>
+        </div>
         <div class="setting-group" id="mode-group">
           <label class="setting-label">Mode</label>
           <div class="segmented-control" id="mode-select">
@@ -60,10 +68,8 @@
             <label>Paraxanthine <input type="number" id="param-hl-paraxanthine" step="0.1" min="0.5" max="20"></label>
           </div>
           <div class="param-group">
-            <h3>Conversion & Potency</h3>
+            <h3>Conversion</h3>
             <label>Fraction of caffeine to paraxanthine <input type="number" id="param-f-paraxanthine" step="0.01" min="0" max="1"></label>
-            <label>Caffeine potency <input type="number" id="param-pot-caffeine" step="0.01" min="0" max="10"></label>
-            <label>Paraxanthine potency <input type="number" id="param-pot-paraxanthine" step="0.01" min="0" max="10"></label>
           </div>
           <div class="param-group">
             <h3>Absorption & Body</h3>
