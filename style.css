@@ -434,6 +434,10 @@ body.embed .settings-panel {
   margin-bottom: 0;
 }
 
+body.embed #mode-group {
+  display: none;
+}
+
 body.embed .settings-row {
   flex-wrap: nowrap;
   gap: 1rem;
