@@ -439,12 +439,9 @@ body.embed #mode-group {
 }
 
 body.embed .settings-row {
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
-}
-
-body.embed .setting-group {
-  min-width: 0;
 }
 
 /* Responsive */
