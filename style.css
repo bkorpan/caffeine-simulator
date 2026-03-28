@@ -434,6 +434,15 @@ body.embed .settings-panel {
   margin-bottom: 0;
 }
 
+body.embed .settings-row {
+  flex-wrap: nowrap;
+  gap: 1rem;
+}
+
+body.embed .setting-group {
+  min-width: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .controls-row {
