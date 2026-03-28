@@ -268,7 +268,7 @@ function update() {
       }
     }
 
-    const fullResults = simulate(simDoses, getEffectiveParams());
+    const fullResults = simulate(simDoses, { ...getEffectiveParams(), minMinutes: RAMP_DAYS * 1440 });
 
     const showStart = (RAMP_DAYS - SHOW_DAYS) * 1440;
     const sliceFrom = Math.min(showStart, fullResults.timestamps.length - 1);
