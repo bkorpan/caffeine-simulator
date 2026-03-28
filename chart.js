@@ -7,6 +7,7 @@ function doseMarkersPlugin(getDoses) {
     hooks: {
       draw: [
         (u) => {
+          if (document.body.classList.contains('embed')) return;
           const doses = getDoses();
           if (!doses.length) return;
           const ctx = u.ctx;
