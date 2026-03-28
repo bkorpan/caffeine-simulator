@@ -170,7 +170,12 @@ function initChart(container, getDoses) {
       x: { time: false },
       y: {
         auto: true,
-        range: (u, min, max) => [0, Math.max(max * 1.1, 0.5)],
+        range: (u, min, max) => {
+          // Snap to nice round ceiling to avoid constant rescaling
+          const padded = max * 1.1;
+          const step = padded <= 1 ? 0.25 : padded <= 3 ? 0.5 : 1;
+          return [0, Math.max(Math.ceil(padded / step) * step, 0.5)];
+        },
       },
     },
     axes: [
