@@ -419,6 +419,21 @@ header h1 {
   padding: 0.5rem 0;
 }
 
+/* Embed mode */
+body.embed header,
+body.embed .controls-row,
+body.embed #advanced-panel {
+  display: none;
+}
+
+body.embed {
+  padding: 0.5rem;
+}
+
+body.embed .settings-panel {
+  margin-bottom: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .controls-row {
