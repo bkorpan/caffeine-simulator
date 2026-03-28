@@ -9,11 +9,13 @@ const state = {
   nextDoseId: 1,
 };
 
+const isEmbed = document.body.classList.contains('embed');
+
 // --- Initialization ---
 
 function init() {
   initChart(document.getElementById('chart'), getDoseMarkers);
-  addDose('coffee', '08:00');
+  addDose('coffee', isEmbed ? '00:00' : '08:00');
   syncParamsToDOM();
   bindEvents();
   update();
@@ -250,9 +252,11 @@ function update() {
     isParaxanthine: d.isParaxanthine,
   }));
 
+  const showMinutes = isEmbed ? 1440 : 2880;
+
   if (state.mode === 'steady') {
     const RAMP_DAYS = 10;
-    const SHOW_DAYS = 2;
+    const SHOW_DAYS = isEmbed ? 1 : 2;
     const simDoses = [];
     for (let day = 0; day < RAMP_DAYS; day++) {
       for (const d of baseDoses) {
@@ -262,10 +266,8 @@ function update() {
 
     const fullResults = simulate(simDoses, getEffectiveParams());
 
-    // Slice the last SHOW_DAYS days for display
     const showStart = (RAMP_DAYS - SHOW_DAYS) * 1440;
     const sliceFrom = Math.min(showStart, fullResults.timestamps.length - 1);
-
     const sliceTo = Math.min(sliceFrom + SHOW_DAYS * 1440, fullResults.timestamps.length);
 
     const sliced = {
@@ -279,9 +281,8 @@ function update() {
     updateChartData(sliced);
     renderSummary(sliced.stats);
   } else {
-    const results = simulate(baseDoses, { ...getEffectiveParams(), minMinutes: 2880 });
-    // Display only the first 2 days, but stats use the full simulation
-    const displayEnd = Math.min(2880, results.timestamps.length);
+    const results = simulate(baseDoses, { ...getEffectiveParams(), minMinutes: showMinutes });
+    const displayEnd = Math.min(showMinutes, results.timestamps.length);
     updateChartData({
       timestamps: results.timestamps.slice(0, displayEnd),
       caffeine: results.caffeine.slice(0, displayEnd),
