@@ -281,7 +281,7 @@ function renderSummary(scenarioId, stats) {
     const elimHours = s.clearTimeMinutes != null
       ? Math.round((s.clearTimeMinutes - firstDoseMinutes) / 60 * 10) / 10
       : null;
-    const elimDisplay = elimHours != null ? `${elimHours} h` : '< threshold';
+    const elimDisplay = elimHours != null ? `${elimHours} h` : 'N/A';
     const aucValue = isSteady ? Math.round(s.auc / 2 * 100) / 100 : s.auc;
     const aucLabel = isSteady ? 'AUC / day' : 'AUC';
 
