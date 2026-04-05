@@ -423,10 +423,10 @@ function update() {
     const r = simulateScenario(scenario);
     results.set(scenario.id, r);
 
-    // Track global y-max across all scenarios
-    for (let i = 0; i < r.display.effective.length; i++) {
-      if (r.display.effective[i] > globalMax) globalMax = r.display.effective[i];
-      if (r.display.caffeine[i] > globalMax) globalMax = r.display.caffeine[i];
+    // Track global y-max across all scenarios and all curves
+    for (let i = 0; i < r.display.timestamps.length; i++) {
+      const v = Math.max(r.display.caffeine[i], r.display.paraxanthine[i], r.display.effective[i]);
+      if (v > globalMax) globalMax = v;
     }
   }
 
