@@ -66,18 +66,69 @@ header h1 {
   margin-bottom: 0.75rem;
 }
 
+/* Scenarios */
+.charts-stack {
+  margin-bottom: 1rem;
+}
+
+.scenario-controls {
+  margin-bottom: 1rem;
+}
+
+.scenario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.scenario-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.scenario-remove {
+  font-size: 1.2rem;
+}
+
+.scenario-add-btn {
+  margin-bottom: 1rem;
+}
+
 /* Chart */
-#chart-container {
+.chart-container {
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 0.5rem;
-  margin-bottom: 1rem;
   overflow: hidden;
 }
 
-#chart {
+.chart-stacked {
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  box-shadow: none;
+}
+
+.chart-stacked + .chart-stacked,
+.chart-container:has(+ .chart-stacked) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.chart-scenario-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.25rem 0.5rem 0;
+}
+
+.chart-area {
   width: 100%;
   min-height: 350px;
 }
@@ -422,7 +473,8 @@ header h1 {
 /* Embed mode */
 body.embed header,
 body.embed .controls-row,
-body.embed #advanced-panel {
+body.embed #advanced-panel,
+body.embed #add-scenario {
   display: none;
 }
 

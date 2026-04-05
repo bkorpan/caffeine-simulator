@@ -1,52 +1,101 @@
 // Application controller — state management, events, DOM updates
 
 const state = {
-  doses: [],
+  scenarios: [],
   metabolismSpeed: 1.0,
   paraxanthinePotency: 1.0,
   mode: 'single',
   params: { ...DEFAULT_PARAMS },
   isCustomParams: false,
+  nextScenarioId: 1,
   nextDoseId: 1,
 };
 
 const isEmbed = document.body.classList.contains('embed');
+const chartInstances = new Map(); // scenarioId -> uPlot instance
 
 // --- Initialization ---
 
 function init() {
-  initChart(document.getElementById('chart'), getDoseMarkers);
-  addDose('coffee', isEmbed ? '00:00' : '08:00');
+  addScenario([{ drinkId: 'coffee', time: isEmbed ? '00:00' : '08:00' }]);
   syncParamsToDOM();
-  bindEvents();
+  bindGlobalEvents();
   update();
+}
+
+// --- Scenario Management ---
+
+function addScenario(initialDoses) {
+  const id = state.nextScenarioId++;
+  const scenario = {
+    id,
+    label: `Scenario ${id}`,
+    doses: [],
+  };
+  state.scenarios.push(scenario);
+
+  if (initialDoses) {
+    for (const d of initialDoses) {
+      const drink = DRINKS.find(dr => dr.id === d.drinkId) || DRINKS[0];
+      scenario.doses.push({
+        id: state.nextDoseId++,
+        drinkId: drink.id,
+        mg: drink.mg,
+        time: d.time || currentTimeString(),
+        isParaxanthine: drink.isParaxanthine,
+        isCustom: drink.id === 'custom_caffeine' || drink.id === 'custom_px',
+      });
+    }
+  }
+
+  renderScenarios();
+  update();
+}
+
+function removeScenario(scenarioId) {
+  if (state.scenarios.length <= 1) return;
+  state.scenarios = state.scenarios.filter(s => s.id !== scenarioId);
+  renderScenarios();
+  update();
+}
+
+function duplicateScenario(scenarioId) {
+  const source = state.scenarios.find(s => s.id === scenarioId);
+  if (!source) return;
+  const doses = source.doses.map(d => ({ drinkId: d.drinkId, time: d.time, mg: d.mg }));
+  addScenario(doses.map(d => ({ drinkId: d.drinkId, time: d.time })));
 }
 
 // --- Dose Management ---
 
-function addDose(drinkId, time) {
+function addDose(scenarioId, drinkId, time) {
+  const scenario = state.scenarios.find(s => s.id === scenarioId);
+  if (!scenario) return;
   const drink = DRINKS.find(d => d.id === drinkId) || DRINKS[0];
-  const dose = {
+  scenario.doses.push({
     id: state.nextDoseId++,
     drinkId: drink.id,
     mg: drink.mg,
     time: time || currentTimeString(),
     isParaxanthine: drink.isParaxanthine,
     isCustom: drink.id === 'custom_caffeine' || drink.id === 'custom_px',
-  };
-  state.doses.push(dose);
-  renderDoseList();
+  });
+  renderScenarioDoses(scenarioId);
   update();
 }
 
-function removeDose(id) {
-  state.doses = state.doses.filter(d => d.id !== id);
-  renderDoseList();
+function removeDose(scenarioId, doseId) {
+  const scenario = state.scenarios.find(s => s.id === scenarioId);
+  if (!scenario) return;
+  scenario.doses = scenario.doses.filter(d => d.id !== doseId);
+  renderScenarioDoses(scenarioId);
   update();
 }
 
-function updateDose(id, field, value) {
-  const dose = state.doses.find(d => d.id === id);
+function updateDose(scenarioId, doseId, field, value) {
+  const scenario = state.scenarios.find(s => s.id === scenarioId);
+  if (!scenario) return;
+  const dose = scenario.doses.find(d => d.id === doseId);
   if (!dose) return;
 
   if (field === 'drinkId') {
@@ -57,7 +106,7 @@ function updateDose(id, field, value) {
       dose.isCustom = drink.id === 'custom_caffeine' || drink.id === 'custom_px';
       if (!dose.isCustom) dose.mg = drink.mg;
     }
-    renderDoseList();
+    renderScenarioDoses(scenarioId);
   } else if (field === 'time') {
     dose.time = value;
   } else if (field === 'mg') {
@@ -90,53 +139,128 @@ function minutesToTimeString(minutes, showDay) {
 
 // --- DOM Rendering ---
 
-function renderDoseList() {
-  const container = document.getElementById('dose-list');
-  if (state.doses.length === 0) {
-    container.innerHTML = '<div class="no-doses">No doses added. Click "+ Add Dose" to start.</div>';
+function renderScenarios() {
+  const container = document.getElementById('scenarios');
+  const multiScenario = state.scenarios.length > 1;
+
+  // Destroy all existing charts (DOM is about to be replaced)
+  for (const [id, chart] of chartInstances) {
+    chart.destroy();
+  }
+  chartInstances.clear();
+
+  // Charts stacked together, then controls for each scenario below
+  let chartsHtml = '<div class="charts-stack">';
+  state.scenarios.forEach((scenario, idx) => {
+    chartsHtml += `
+      <div class="chart-container ${idx > 0 ? 'chart-stacked' : ''}" data-scenario-id="${scenario.id}">
+        ${multiScenario ? `<div class="chart-scenario-label">Scenario ${idx + 1}</div>` : ''}
+        <div class="chart-area" id="chart-${scenario.id}"></div>
+      </div>
+    `;
+  });
+  chartsHtml += '</div>';
+
+  let controlsHtml = '';
+  state.scenarios.forEach((scenario, idx) => {
+    controlsHtml += `
+      <div class="scenario-controls" data-scenario-id="${scenario.id}">
+        ${multiScenario ? `
+          <div class="scenario-header">
+            <span class="scenario-label">Scenario ${idx + 1}</span>
+            <button class="btn-remove scenario-remove" data-scenario-id="${scenario.id}" title="Remove scenario">&times;</button>
+          </div>
+        ` : ''}
+        <div class="controls-row">
+          <div class="card dose-panel">
+            <h2>Doses</h2>
+            <div class="dose-list" id="dose-list-${scenario.id}"></div>
+            <button class="btn btn-add add-dose-btn" data-scenario-id="${scenario.id}">+ Add Dose</button>
+          </div>
+          <div class="card summary-panel">
+            <h2>Summary</h2>
+            <div class="summary" id="summary-${scenario.id}"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = chartsHtml + controlsHtml;
+
+  // Create chart instances
+  state.scenarios.forEach((scenario, idx) => {
+    const chartEl = document.getElementById(`chart-${scenario.id}`);
+    const getDoses = () => getDoseMarkers(scenario.id);
+    const showLegend = idx === state.scenarios.length - 1;
+    chartInstances.set(scenario.id, createChart(chartEl, getDoses, showLegend));
+  });
+
+  // Render doses for each scenario
+  state.scenarios.forEach(s => renderScenarioDoses(s.id));
+
+  // Bind scenario-level events
+  container.querySelectorAll('.scenario-remove').forEach(el => {
+    el.addEventListener('click', () => removeScenario(Number(el.dataset.scenarioId)));
+  });
+  container.querySelectorAll('.add-dose-btn').forEach(el => {
+    el.addEventListener('click', () => addDose(Number(el.dataset.scenarioId), 'coffee', currentTimeString()));
+  });
+}
+
+function renderScenarioDoses(scenarioId) {
+  const scenario = state.scenarios.find(s => s.id === scenarioId);
+  if (!scenario) return;
+  const container = document.getElementById(`dose-list-${scenarioId}`);
+  if (!container) return;
+
+  if (scenario.doses.length === 0) {
+    container.innerHTML = '<div class="no-doses">No doses added.</div>';
     return;
   }
 
-  container.innerHTML = state.doses.map(dose => {
+  container.innerHTML = scenario.doses.map(dose => {
     const options = DRINKS.map(d =>
       `<option value="${d.id}" ${d.id === dose.drinkId ? 'selected' : ''}>${d.label}</option>`
     ).join('');
 
     const mgDisplay = dose.isCustom
-      ? `<input type="number" class="dose-mg-input" data-id="${dose.id}" value="${dose.mg}" min="0" max="2000" step="5">`
+      ? `<input type="number" class="dose-mg-input" data-scenario-id="${scenarioId}" data-id="${dose.id}" value="${dose.mg}" min="0" max="2000" step="5">`
       : `<span class="dose-mg-label">${dose.mg} mg</span>`;
 
     return `
       <div class="dose-entry" data-id="${dose.id}">
-        <select class="dose-select" data-id="${dose.id}">${options}</select>
-        <input type="time" class="dose-time" data-id="${dose.id}" value="${dose.time}">
+        <select class="dose-select" data-scenario-id="${scenarioId}" data-id="${dose.id}">${options}</select>
+        <input type="time" class="dose-time" data-scenario-id="${scenarioId}" data-id="${dose.id}" value="${dose.time}">
         ${mgDisplay}
-        <button class="btn-remove" data-id="${dose.id}" title="Remove dose">&times;</button>
+        <button class="btn-remove" data-scenario-id="${scenarioId}" data-id="${dose.id}" title="Remove dose">&times;</button>
       </div>
     `;
   }).join('');
 
   container.querySelectorAll('.dose-select').forEach(el => {
-    el.addEventListener('change', e => updateDose(Number(e.target.dataset.id), 'drinkId', e.target.value));
+    el.addEventListener('change', e => updateDose(Number(e.target.dataset.scenarioId), Number(e.target.dataset.id), 'drinkId', e.target.value));
   });
   container.querySelectorAll('.dose-time').forEach(el => {
-    el.addEventListener('change', e => updateDose(Number(e.target.dataset.id), 'time', e.target.value));
+    el.addEventListener('change', e => updateDose(Number(e.target.dataset.scenarioId), Number(e.target.dataset.id), 'time', e.target.value));
   });
   container.querySelectorAll('.dose-mg-input').forEach(el => {
-    el.addEventListener('input', debounce(e => updateDose(Number(e.target.dataset.id), 'mg', e.target.value), 150));
+    el.addEventListener('input', debounce(e => updateDose(Number(e.target.dataset.scenarioId), Number(e.target.dataset.id), 'mg', e.target.value), 150));
   });
   container.querySelectorAll('.btn-remove').forEach(el => {
-    el.addEventListener('click', e => removeDose(Number(e.target.dataset.id)));
+    el.addEventListener('click', e => removeDose(Number(e.target.dataset.scenarioId), Number(e.target.dataset.id)));
   });
 }
 
-function renderSummary(stats) {
-  const container = document.getElementById('summary');
+function renderSummary(scenarioId, stats) {
+  const container = document.getElementById(`summary-${scenarioId}`);
+  if (!container) return;
   if (!stats) {
     container.innerHTML = '<div class="no-doses">Add a dose to see results.</div>';
     return;
   }
 
+  const scenario = state.scenarios.find(s => s.id === scenarioId);
   const compounds = [
     { key: 'caffeine', label: 'Caffeine', color: 'var(--color-caffeine)' },
     { key: 'paraxanthine', label: 'Paraxanthine', color: 'var(--color-paraxanthine)' },
@@ -151,7 +275,9 @@ function renderSummary(stats) {
     const peakTime = s.peakTimeMinutes != null
       ? minutesToTimeString(s.peakTimeMinutes % 1440, false)
       : '—';
-    const firstDoseMinutes = Math.min(...state.doses.map(d => timeToMinutes(d.time)));
+    const firstDoseMinutes = scenario && scenario.doses.length > 0
+      ? Math.min(...scenario.doses.map(d => timeToMinutes(d.time)))
+      : 0;
     const elimHours = s.clearTimeMinutes != null
       ? Math.round((s.clearTimeMinutes - firstDoseMinutes) / 60 * 10) / 10
       : null;
@@ -195,13 +321,8 @@ function readParamsFromDOM() {
   state.params.vd = parseFloat(document.getElementById('param-vd').value) || DEFAULT_PARAMS.vd;
 }
 
-// Convert slider value (-1..1) to speed (0.5..2.0) with log spacing
 function sliderToSpeed(v) {
   return Math.pow(2, v);
-}
-
-function speedToSlider(speed) {
-  return Math.log2(speed);
 }
 
 function setMetabolismSpeed(sliderVal) {
@@ -228,8 +349,10 @@ function getEffectiveParams() {
 
 // --- Simulation & Update ---
 
-function getDoseMarkers() {
-  return state.doses.map(d => {
+function getDoseMarkers(scenarioId) {
+  const scenario = state.scenarios.find(s => s.id === scenarioId);
+  if (!scenario) return [];
+  return scenario.doses.map(d => {
     const drink = DRINKS.find(dr => dr.id === d.drinkId);
     return {
       timestamp: timeToMinutes(d.time),
@@ -238,19 +361,8 @@ function getDoseMarkers() {
   });
 }
 
-function update() {
-  if (state.doses.length === 0) {
-    updateChartData({
-      timestamps: new Float64Array(0),
-      caffeine: new Float64Array(0),
-      paraxanthine: new Float64Array(0),
-      effective: new Float64Array(0),
-    });
-    renderSummary(null);
-    return;
-  }
-
-  const baseDoses = state.doses.map(d => ({
+function simulateScenario(scenario) {
+  const baseDoses = scenario.doses.map(d => ({
     timeMinutes: timeToMinutes(d.time),
     mg: d.mg,
     isParaxanthine: d.isParaxanthine,
@@ -274,26 +386,69 @@ function update() {
     const sliceFrom = Math.min(showStart, fullResults.timestamps.length - 1);
     const sliceTo = Math.min(sliceFrom + SHOW_DAYS * 1440, fullResults.timestamps.length);
 
-    const sliced = {
-      timestamps: fullResults.timestamps.slice(sliceFrom, sliceTo),
-      caffeine: fullResults.caffeine.slice(sliceFrom, sliceTo),
-      paraxanthine: fullResults.paraxanthine.slice(sliceFrom, sliceTo),
-      effective: fullResults.effective.slice(sliceFrom, sliceTo),
+    return {
+      display: {
+        timestamps: fullResults.timestamps.slice(sliceFrom, sliceTo),
+        caffeine: fullResults.caffeine.slice(sliceFrom, sliceTo),
+        paraxanthine: fullResults.paraxanthine.slice(sliceFrom, sliceTo),
+        effective: fullResults.effective.slice(sliceFrom, sliceTo),
+      },
       stats: computeStatsForRange(fullResults, sliceFrom, sliceTo),
     };
-
-    updateChartData(sliced);
-    renderSummary(sliced.stats);
   } else {
     const results = simulate(baseDoses, { ...getEffectiveParams(), minMinutes: showMinutes });
     const displayEnd = Math.min(showMinutes, results.timestamps.length);
-    updateChartData({
-      timestamps: results.timestamps.slice(0, displayEnd),
-      caffeine: results.caffeine.slice(0, displayEnd),
-      paraxanthine: results.paraxanthine.slice(0, displayEnd),
-      effective: results.effective.slice(0, displayEnd),
-    });
-    renderSummary(results.stats);
+    return {
+      display: {
+        timestamps: results.timestamps.slice(0, displayEnd),
+        caffeine: results.caffeine.slice(0, displayEnd),
+        paraxanthine: results.paraxanthine.slice(0, displayEnd),
+        effective: results.effective.slice(0, displayEnd),
+      },
+      stats: results.stats,
+    };
+  }
+}
+
+function update() {
+  // Simulate all scenarios
+  const results = new Map();
+  let globalMax = 0;
+
+  for (const scenario of state.scenarios) {
+    if (scenario.doses.length === 0) {
+      results.set(scenario.id, null);
+      continue;
+    }
+    const r = simulateScenario(scenario);
+    results.set(scenario.id, r);
+
+    // Track global y-max across all scenarios
+    for (let i = 0; i < r.display.effective.length; i++) {
+      if (r.display.effective[i] > globalMax) globalMax = r.display.effective[i];
+      if (r.display.caffeine[i] > globalMax) globalMax = r.display.caffeine[i];
+    }
+  }
+
+  // Set shared y-max for consistent axis scaling
+  setSharedYMax(globalMax);
+
+  // Update each chart and summary
+  for (const scenario of state.scenarios) {
+    const chart = chartInstances.get(scenario.id);
+    const r = results.get(scenario.id);
+    if (!r) {
+      if (chart) updateChartData(chart, {
+        timestamps: new Float64Array(0),
+        caffeine: new Float64Array(0),
+        paraxanthine: new Float64Array(0),
+        effective: new Float64Array(0),
+      });
+      renderSummary(scenario.id, null);
+    } else {
+      if (chart) updateChartData(chart, r.display);
+      renderSummary(scenario.id, r.stats);
+    }
   }
 }
 
@@ -327,9 +482,11 @@ function computeStatsForRange(results, fromIdx, toIdx) {
 
 // --- Event Binding ---
 
-function bindEvents() {
-  document.getElementById('add-dose').addEventListener('click', () => {
-    addDose('coffee', currentTimeString());
+function bindGlobalEvents() {
+  document.getElementById('add-scenario').addEventListener('click', () => {
+    const lastScenario = state.scenarios[state.scenarios.length - 1];
+    const doses = lastScenario ? lastScenario.doses.map(d => ({ drinkId: d.drinkId, time: d.time })) : [];
+    addScenario(doses.length ? doses : [{ drinkId: 'coffee', time: currentTimeString() }]);
   });
 
   document.getElementById('metabolism-speed').addEventListener('input', e => {

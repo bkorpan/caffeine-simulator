@@ -1,6 +1,10 @@
-// Chart wrapper using uPlot
+// Chart wrapper using uPlot — supports multiple instances
 
-let chartInstance = null;
+let sharedYMax = 0.5; // Global y-max across all scenarios
+
+function setSharedYMax(max) {
+  sharedYMax = max;
+}
 
 function doseMarkersPlugin(getDoses) {
   return {
@@ -45,13 +49,12 @@ function dayBandsPlugin() {
           const { left, top, width, height } = u.bbox;
           const [xMin, xMax] = [u.scales.x.min, u.scales.x.max];
 
-          // Find day boundaries (midnight = minute 0, 1440, 2880, ...)
           const firstDay = Math.floor(xMin / 1440);
           const lastDay = Math.ceil(xMax / 1440);
 
           ctx.save();
           for (let day = firstDay; day <= lastDay; day++) {
-            if (day % 2 === 0) continue; // only shade odd days
+            if (day % 2 === 0) continue;
             const startMin = day * 1440;
             const endMin = (day + 1) * 1440;
             const x0 = Math.max(u.valToPos(startMin, 'x', true), left);
@@ -162,7 +165,7 @@ function formatHourLabels(self, ticks) {
   });
 }
 
-function initChart(container, getDoses) {
+function createChart(container, getDoses, showLegend) {
   const opts = {
     width: container.clientWidth,
     height: 350,
@@ -173,7 +176,7 @@ function initChart(container, getDoses) {
         auto: true,
         range: (u, min, max) => {
           if (document.body.classList.contains('embed')) return [0, 2.5];
-          const padded = max * 1.1;
+          const padded = sharedYMax * 1.1;
           const step = padded <= 1 ? 0.25 : padded <= 3 ? 0.5 : 1;
           return [0, Math.max(Math.ceil(padded / step) * step, 0.5)];
         },
@@ -223,7 +226,12 @@ function initChart(container, getDoses) {
     cursor: {
       drag: { x: true, y: false, setScale: true },
     },
-    plugins: [dayBandsPlugin(), doseMarkersPlugin(getDoses), tooltipPlugin(), legendPlugin()],
+    plugins: [
+      dayBandsPlugin(),
+      doseMarkersPlugin(getDoses),
+      tooltipPlugin(),
+      ...(showLegend !== false ? [legendPlugin()] : []),
+    ],
   };
 
   const data = [
@@ -233,28 +241,25 @@ function initChart(container, getDoses) {
     new Float64Array(0),
   ];
 
-  chartInstance = new uPlot(opts, data, container);
+  const chart = new uPlot(opts, data, container);
 
   const ro = new ResizeObserver(entries => {
     const width = entries[0].contentRect.width;
-    if (Math.abs(width - chartInstance.width) > 1) {
-      chartInstance.setSize({ width, height: 350 });
+    if (Math.abs(width - chart.width) > 1) {
+      chart.setSize({ width, height: 350 });
     }
   });
   ro.observe(container);
 
-  return chartInstance;
+  return chart;
 }
 
-function updateChartData(results) {
-  if (!chartInstance) return;
-
-  const data = [
+function updateChartData(chart, results) {
+  if (!chart) return;
+  chart.setData([
     results.timestamps,
     results.caffeine,
     results.paraxanthine,
     results.effective,
-  ];
-
-  chartInstance.setData(data);
+  ]);
 }
