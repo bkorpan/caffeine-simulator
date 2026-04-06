@@ -480,11 +480,28 @@ body.embed .scenario-controls {
 }
 
 body.embed {
-  padding: 0.5rem;
+  padding: 0.25rem;
+}
+
+body.embed .charts-stack {
+  margin-bottom: 0.5rem;
+}
+
+body.embed .chart-container {
+  padding: 0.25rem;
+}
+
+body.embed .chart-area {
+  min-height: 280px;
+}
+
+body.embed .chart-scenario-label {
+  padding: 0.1rem 0.4rem 0;
 }
 
 body.embed .settings-panel {
   margin-bottom: 0;
+  padding: 0.5rem;
 }
 
 body.embed #mode-group {
