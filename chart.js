@@ -177,7 +177,6 @@ function createChart(container, getDoses, showLegend) {
       y: {
         auto: true,
         range: (u, min, max) => {
-          if (document.body.classList.contains('embed')) return [0, 2.5];
           const padded = sharedYMax * 1.1;
           const step = padded <= 1 ? 0.25 : padded <= 3 ? 0.5 : 1;
           return [0, Math.max(Math.ceil(padded / step) * step, 0.5)];
