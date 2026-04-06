@@ -17,9 +17,11 @@ const chartInstances = new Map(); // scenarioId -> uPlot instance
 // --- Initialization ---
 
 function init() {
-  addScenario([{ drinkId: 'coffee', time: isEmbed ? '00:00' : '08:00' }]);
   if (isEmbed) {
-    addScenario([{ drinkId: 'custom_px', time: '00:00', mg: 95 }]);
+    addScenario([{ drinkId: 'coffee', time: '00:00' }], '95 mg Caffeine');
+    addScenario([{ drinkId: 'custom_px', time: '00:00', mg: 95 }], '95 mg Paraxanthine');
+  } else {
+    addScenario([{ drinkId: 'coffee', time: '08:00' }]);
   }
   syncParamsToDOM();
   bindGlobalEvents();
@@ -28,11 +30,11 @@ function init() {
 
 // --- Scenario Management ---
 
-function addScenario(initialDoses) {
+function addScenario(initialDoses, label) {
   const id = state.nextScenarioId++;
   const scenario = {
     id,
-    label: `Scenario ${id}`,
+    label: label || `Scenario ${id}`,
     doses: [],
   };
   state.scenarios.push(scenario);
@@ -157,7 +159,7 @@ function renderScenarios() {
   state.scenarios.forEach((scenario, idx) => {
     chartsHtml += `
       <div class="chart-container ${idx > 0 ? 'chart-stacked' : ''}" data-scenario-id="${scenario.id}">
-        ${multiScenario ? `<div class="chart-scenario-label">Scenario ${idx + 1}</div>` : ''}
+        ${multiScenario ? `<div class="chart-scenario-label">${scenario.label}</div>` : ''}
         <div class="chart-area" id="chart-${scenario.id}"></div>
       </div>
     `;
@@ -170,7 +172,7 @@ function renderScenarios() {
       <div class="scenario-controls" data-scenario-id="${scenario.id}">
         ${multiScenario ? `
           <div class="scenario-header">
-            <span class="scenario-label">Scenario ${idx + 1}</span>
+            <span class="scenario-label">${scenario.label}</span>
             <button class="btn-remove scenario-remove" data-scenario-id="${scenario.id}" title="Remove scenario">&times;</button>
           </div>
         ` : ''}

@@ -474,7 +474,8 @@ header h1 {
 body.embed header,
 body.embed .controls-row,
 body.embed #advanced-panel,
-body.embed #add-scenario {
+body.embed #add-scenario,
+body.embed .scenario-remove {
   display: none;
 }
 
