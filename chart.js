@@ -166,9 +166,11 @@ function formatHourLabels(self, ticks) {
 }
 
 function createChart(container, getDoses, showLegend) {
+  const isEmbed = document.body.classList.contains('embed');
+  const chartHeight = isEmbed ? 280 : 350;
   const opts = {
     width: container.clientWidth,
-    height: 350,
+    height: chartHeight,
     padding: [20, 10, 0, 0],
     scales: {
       x: { time: false },
@@ -246,7 +248,7 @@ function createChart(container, getDoses, showLegend) {
   const ro = new ResizeObserver(entries => {
     const width = entries[0].contentRect.width;
     if (Math.abs(width - chart.width) > 1) {
-      chart.setSize({ width, height: 350 });
+      chart.setSize({ width, height: chartHeight });
     }
   });
   ro.observe(container);
