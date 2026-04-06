@@ -18,6 +18,9 @@ const chartInstances = new Map(); // scenarioId -> uPlot instance
 
 function init() {
   addScenario([{ drinkId: 'coffee', time: isEmbed ? '00:00' : '08:00' }]);
+  if (isEmbed) {
+    addScenario([{ drinkId: 'custom_px', time: '00:00', mg: 95 }]);
+  }
   syncParamsToDOM();
   bindGlobalEvents();
   update();
@@ -40,7 +43,7 @@ function addScenario(initialDoses) {
       scenario.doses.push({
         id: state.nextDoseId++,
         drinkId: drink.id,
-        mg: drink.mg,
+        mg: d.mg != null ? d.mg : drink.mg,
         time: d.time || currentTimeString(),
         isParaxanthine: drink.isParaxanthine,
         isCustom: drink.id === 'custom_caffeine' || drink.id === 'custom_px',
