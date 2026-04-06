@@ -226,6 +226,7 @@ function createChart(container, getDoses, showLegend) {
     legend: { show: false },
     cursor: {
       drag: { x: true, y: false, setScale: true },
+      sync: { key: 'caffeine-sim' },
     },
     plugins: [
       dayBandsPlugin(),
