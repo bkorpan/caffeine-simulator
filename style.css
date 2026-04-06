@@ -475,7 +475,7 @@ body.embed header,
 body.embed .controls-row,
 body.embed #advanced-panel,
 body.embed #add-scenario,
-body.embed .scenario-remove {
+body.embed .scenario-controls {
   display: none;
 }
 
