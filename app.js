@@ -18,8 +18,8 @@ const chartInstances = new Map(); // scenarioId -> uPlot instance
 
 function init() {
   if (isEmbed) {
-    addScenario([{ drinkId: 'coffee', time: '00:00' }], '95 mg Caffeine');
-    addScenario([{ drinkId: 'custom_px', time: '00:00', mg: 95 }], '95 mg Paraxanthine');
+    addScenario([{ drinkId: 'custom_caffeine', time: '00:00', mg: 100 }], '100 mg Caffeine');
+    addScenario([{ drinkId: 'custom_px', time: '00:00', mg: 100 }], '100 mg Paraxanthine');
   } else {
     addScenario([{ drinkId: 'coffee', time: '08:00' }]);
   }
