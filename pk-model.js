@@ -6,8 +6,8 @@ const DEFAULT_PARAMS = {
   halfLife_caffeine: 5.0,
   halfLife_paraxanthine: 4.0,
   fraction_paraxanthine: 0.84,
-  ka_caffeine: 4.0,       // absorption rate, h^-1
-  ka_paraxanthine: 3.5,   // absorption rate for PX supplements, h^-1
+  ka_caffeine: 5.0,       // absorption rate, h^-1
+  ka_paraxanthine: 5.0,   // absorption rate for PX supplements, h^-1
   bodyWeight: 70,          // kg
   vd: 0.7,                // L/kg
   potency_caffeine: 1.0,
